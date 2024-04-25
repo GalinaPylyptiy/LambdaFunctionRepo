@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: SAM template for my Lambda Function
+Resources:
+    LambdaS3DynamoDBAccessPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+            ManagedPolicyName: LambdaS3DynamoDBAccessPolicy
+            PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                    -   Effect: Allow
+                        Action:
+                            - dynamodb:BatchGetItem
+                            - dynamodb:BatchWriteItem
+                            - dynamodb:PutItem
+                            - dynamodb:GetItem
+                            - dynamodb:Scan
+                            - dynamodb:Query
+                            - dynamodb:UpdateItem
+                            - logs:CreateLogGroup
+                            - logs:CreateLogStream
+                            - logs:PutLogEvents
+                        Resource:
+                            - arn:aws:logs:*:*:*
+                            - arn:aws:dynamodb:*:*:*
+                    -   Effect: Allow
+                        Action:
+                            - s3:GetObject
+                            - s3:PutObject
+                        Resource:
+                            - arn:aws:s3:::galina-pylyptiy-bucket/*
+        Metadata:
+            SamResourceId: LambdaS3DynamoDBAccessPolicy
+    MyLambdaExecutionRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: MyLambdaExecutionRole
+            AssumeRolePolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                    -   Effect: Allow
+                        Principal:
+                            Service: lambda.amazonaws.com
+                        Action: sts:AssumeRole
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+                -   Ref: LambdaS3DynamoDBAccessPolicy
+        Metadata:
+            SamResourceId: MyLambdaExecutionRole
+    MyLambdaFunction:
+        Type: AWS::Lambda::Function
+        Properties:
+            Handler: com.epam.aws.CsvFileRequestHandler::handleRequest
+            Role:
+                Fn::GetAtt:
+                    - MyLambdaExecutionRole
+                    - Arn
+            MemorySize: 512
+            Timeout: 30
+            Runtime: java11
+            Environment:
+                Variables:
+                    ACCESS_KEY: **********
+                    SECRET_KEY: *********
+            Code:
+                S3Bucket: galina-pylyptiy-bucket
+                S3Key: aca54bb75d7134670d687934fa243adf
+        Metadata:
+            SamResourceId: MyLambdaFunction
